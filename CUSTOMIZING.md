@@ -17,6 +17,7 @@ Run `pnpm validate` after any change, and `npx eve info` to see what eve discove
 | Models | `agent/agent.ts`, `agent/subagents/<id>/agent.ts`, or `/model` in the TUI |
 | Approval gates | `APPROVAL_REQUIRED_TOOLS` in `notion.ts`, `DELETE_TOOLS`/`PUBLISH_TOOLS` in `typefully.ts`, `SEND_TOOLS`/`DESTRUCTIVE_TOOLS` in `resend.ts` |
 | Resend's tool surface | `ALLOWED_TOOLS` in `agent/subagents/email/connections/resend.ts` |
+| Slack suggested prompts | `SUGGESTED_PROMPTS` in `agent/channels/slack.ts` |
 
 ## Remove what you do not use
 
@@ -119,6 +120,24 @@ vercel connect create linear --name marketing-team
 ```
 
 Use `tools.allow` when the server publishes more than the job needs, and gate writes with `approval`.
+
+## Edit the suggested prompts
+
+The prompts Slack pins when a conversation opens are `SUGGESTED_PROMPTS` in `agent/channels/slack.ts`.
+
+```ts
+const SUGGESTED_PROMPTS: SuggestedPrompt[] = [
+  {
+    message:
+      "Help me plan and write our next blog post. Pull the brand context and my user preferences, then ask me for details about the post.",
+    title: "Write a blog post",
+  },
+];
+```
+
+`title` is the button label and `message` is what gets sent. Slack renders the first four and drops the rest, so reorder rather than append. It sends `message` verbatim on click with no chance to edit, so each one has to be a complete sentence.
+
+`SUGGESTED_PROMPTS_TITLE` in the same file is the heading above them.
 
 ## Gotchas
 

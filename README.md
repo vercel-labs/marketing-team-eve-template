@@ -54,6 +54,21 @@ Every irreversible action stops for an approve or deny decision, rendered as a b
 
 The Resend connection goes one step further than gating. It narrows what the model can discover at all with `tools.allow`, cutting roughly 85 published tools to the 47 that make up the campaign, list, and diagnostic surface. Account administration such as API key creation and domain writes is never on the table.
 
+### Slack opens with suggested prompts
+
+Opening a fresh conversation with the team pins four starting prompts. Slack renders at most four, so it is one per specialist rather than a tour of the whole team.
+
+| Prompt | Routes to |
+| --- | --- |
+| Sharpen our positioning | `product-marketer` |
+| Write a blog post | `content-marketer` |
+| Draft social posts | `social-media-coordinator` |
+| Review a page's SEO | `seo` |
+
+Each one names the deliverable, asks for the brand context and your preferences, then hands the interview back, so an unspecified request costs one question rather than a wasted delegation.
+
+This requires `assistant:write` under Bot Scopes and the `assistant_thread_started` and `app_home_opened` trigger event types. Without them the prompts never appear, and the rest of the channel is unaffected.
+
 ## Deploy
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?project-name=marketing-team-eve-template&repository-name=marketing-team-eve-template&repository-url=https%3A%2F%2Fgithub.com%2Fvercel-labs%2Fmarketing-team-eve-template%2Ftree%2Fmain&connect=%5B%7B%22type%22%3A%22notion%22%2C%22env%22%3A%22NOTION_CONNECTOR%22%7D%2C%7B%22type%22%3A%22resend%22%2C%22env%22%3A%22RESEND_CONNECTOR%22%7D%2C%7B%22type%22%3A%22slack%22%2C%22env%22%3A%22SLACK_CONNECTOR%22%2C%22triggers%22%3Atrue%2C%22triggerPath%22%3A%22%2Feve%2Fv1%2Fslack%22%7D%5D&stores=%5B%7B%22type%22%3A%22blob%22%2C%22access%22%3A%22public%22%7D%5D&env=TYPEFULLY_API_KEY&envDescription=API%20key%20for%20the%20Typefully%20MCP%20server%2C%20used%20to%20read%20and%20write%20social%20drafts)
