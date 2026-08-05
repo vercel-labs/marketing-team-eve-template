@@ -8,7 +8,7 @@ This repository holds a team of marketing agents built on the [eve](https://eve.
 
 The lead picks a specialist by reading `description` in each `agent.ts`, so adding a specialist means adding a directory. Nothing in `agent/instructions.md` enumerates them, and nothing should.
 
-The whole agent is defined under `agent/`. eve discovers capabilities from the filesystem. See [`ARCHITECTURE.md`](./ARCHITECTURE.md) for the component map, data flow, and boundaries.
+The whole agent is defined under `agent/`. eve discovers capabilities from the filesystem. See [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) for the component map, data flow, and boundaries.
 
 ## Setup & commands
 

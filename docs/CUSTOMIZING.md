@@ -158,4 +158,4 @@ The Notion connection is copied per agent and the copies must match. This should
 md5 -q $(find agent -name notion.ts -path '*connections*') | sort -u | wc -l
 ```
 
-See [`ARCHITECTURE.md`](./ARCHITECTURE.md) for the component map and [`AGENTS.md`](./AGENTS.md) for agent conventions.
+See [`ARCHITECTURE.md`](./ARCHITECTURE.md) for the component map and [`AGENTS.md`](../AGENTS.md) for agent conventions.
