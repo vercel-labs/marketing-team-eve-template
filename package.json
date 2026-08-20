@@ -8,25 +8,25 @@
   },
   "scripts": {
     "build": "eve build",
+    "check": "ultracite check",
     "dev": "eve dev",
+    "fix": "ultracite fix",
     "start": "eve start",
     "typecheck": "tsc",
-    "check": "ultracite check",
-    "fix": "ultracite fix",
     "validate": "pnpm run check && pnpm run typecheck && eve info"
   },
   "dependencies": {
-    "@vercel/blob": "^2.6.1",
-    "@vercel/connect": "0.4.2",
-    "ai": "^7.0.37",
-    "eve": "^0.27.6",
+    "@vercel/blob": "^2.8.0",
+    "@vercel/connect": "0.8.0",
+    "ai": "^7.0.70",
+    "eve": "^0.39.3",
     "zod": "4.4.3"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.5.3",
+    "@biomejs/biome": "^2.5.9",
     "@types/node": "~24.13.3",
     "typescript": "7.0.2",
-    "ultracite": "^7.9.4"
+    "ultracite": "^7.10.5"
   },
   "engines": {
     "node": "24.x"
