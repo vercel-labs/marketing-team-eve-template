@@ -1,18 +1,16 @@
 import { defineSandbox } from "eve/sandbox";
-import { vercel } from "eve/sandbox/vercel";
+import { VercelSandbox } from "eve/sandbox/vercel";
 
 /**
  * Subagent sandbox configuration.
  *
  * @remarks
- * Subagents inherit nothing from the root agent: an absent `sandbox.ts` falls back to the
- * framework default rather than the root's choice. This pins the same hosted Vercel Sandbox
- * backend the root uses, which is what makes each skill's `references/` files readable — static
- * `SKILL.md` instructions load without a sandbox, but supporting files are materialized into one.
- * Every per-surface style skill keeps its specs and banned-words list in `references/`.
+ * Subagents inherit nothing from the root agent, so each sandbox selects the same hosted Vercel
+ * Sandbox environment as the root. This lets the agent read its skill reference files in both
+ * development and production.
  *
  * @see {@link https://vercel.com/docs/sandbox | Vercel Sandbox}
  */
-export default defineSandbox({
-  backend: vercel(),
-});
+export const environment = VercelSandbox.environment();
+
+export default defineSandbox(() => environment.open());

@@ -83,7 +83,7 @@ export default writingQualitySkill();
 Four things to know before you touch it:
 
 - **The prose lives in `lib/writing-quality/config.ts`** as template literals, because `description` and `markdown` are typed as `string` and eve refuses `.md` files under `lib/`. Edit that file as a document, not as code, and keep any backtick inside a literal escaped.
-- **`files` entries materialize as real siblings**, so `references/ai-phrases-to-avoid.md` still resolves from the markdown body and from `ctx.getSkill(...)`. The compiled package is byte-identical to the directory it replaced, minus the frontmatter block: the description now travels in the manifest instead of the file.
+- **`files` entries materialize as real siblings**, so `references/ai-phrases-to-avoid.md` resolves from the skill body. Runtime tools have no skill-file API; when code needs reference data, import it from a module in `lib/` or from the authored tool module.
 - **The skill name comes from the calling file's slug**, so every caller has to sit at `skills/writing-quality.ts`. Rename the file and the skill renames with it, silently breaking the `instructions.md` files that ask for it by name.
 - **Skill names must start with an alphanumeric character.** One that doesn't is dropped from discovery with no diagnostic and no entry in the manifest, which is a genuinely confusing five minutes.
 

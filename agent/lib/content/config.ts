@@ -4,16 +4,13 @@ import { z } from "zod";
  * Skill layout, input bounds, and pure helpers for the shared content tooling.
  *
  * @remarks
- * A style skill is the source of truth for how a surface writes, and this module owns the two
- * conventions that let a tool reach into one: the skill id a surface resolves to
- * ({@link styleSkillId}) and the reference file that holds its banned words
- * ({@link BANNED_WORDS_FILE}). A tool derives both from a fixed surface enum, never from free
- * model input, so renaming the convention is one edit here rather than a search across agents.
+ * Style skills remain the source of truth for each surface's banned words. Their JSON reference
+ * files are imported by the authored tool modules and passed here as data because runtime tools
+ * cannot read skill files directly.
  *
- * The matching logic lives here too, because it is pure and it is where the safety properties sit:
- * {@link parseBannedWords} decides what a malformed list means and {@link findBannedWords} owns the
- * regex construction. `tools.ts` is then only the interface, and these helpers stay callable by
- * whatever content tooling lands next.
+ * The matching logic lives here because it is pure and owns the safety properties:
+ * {@link parseBannedWords} decides what a malformed list means and {@link findBannedWords} owns
+ * regex construction.
  */
 
 /**
@@ -27,29 +24,6 @@ import { z } from "zod";
  * @defaultValue 100_000
  */
 export const MAX_DRAFT_LENGTH = 100_000;
-
-/**
- * Path, within a style skill, of the file listing that surface's banned words.
- *
- * @remarks
- * Every `<surface>-style` skill carries this file, so the path is a convention rather than a
- * per-surface setting. A skill missing the file is not an error: the caller treats an unreadable
- * list as an empty one.
- */
-export const BANNED_WORDS_FILE = "references/banned-words.json";
-
-/**
- * Resolve the style skill id that owns a surface's conventions.
- *
- * @remarks
- * The naming convention is `<surface>-style`, matching the skill directories under each agent's
- * `skills/`. Callers pass a surface drawn from their own fixed enum, so the resolved id can never
- * be influenced by model input.
- *
- * @param surface - Content surface, e.g. `blog` or `x`.
- * @returns The skill id, e.g. `blog-style`.
- */
-export const styleSkillId = (surface: string): string => `${surface}-style`;
 
 /**
  * Schema for a `banned-words.json` file: a flat array of strings.
