@@ -1,14 +1,8 @@
 import { defineTool } from "eve/tools";
 import { z } from "zod";
-
-/**
- * Path, within the `schema` skill, of the required-property map this tool checks against.
- *
- * @remarks
- * The skill stays the source of truth: its `SKILL.md` table and this file list the same types, so
- * adding one is a skill edit rather than a code change.
- */
-const REQUIRED_PROPERTIES_FILE = "references/required-properties.json";
+import requiredProperties from "../skills/schema/references/required-properties.json" with {
+  type: "json",
+};
 
 /**
  * Maximum length of the JSON-LD accepted, in characters.
@@ -152,10 +146,10 @@ const malformedValues = (node: JsonLdNode): string[] => {
  * whether the markup describes what the page actually shows, which is the failure that earns a
  * manual action, so a clean result is a floor rather than approval.
  *
- * The required-property map is read from the skill at runtime, so the `SKILL.md` table and the
- * validator can't drift. When that file can't be read the result is an error rather than a warning,
- * and `valid` goes false: a validator that skips its main check and still reports clean is worse
- * than one that fails, because the caller acts on `valid` and not on the prose beside it.
+ * The required-property map is imported from the schema skill's reference file, so its `SKILL.md`
+ * table and this validator can't drift. If the map has an invalid shape, the result is an error
+ * rather than a warning, because a validator that skips its main check and still reports clean is
+ * worse than one that fails.
  */
 export default defineTool({
   description:
@@ -167,10 +161,9 @@ export default defineTool({
    * Validate the supplied JSON-LD.
    *
    * @param input - Validated tool input.
-   * @param ctx - Tool runtime context, used to read the skill's reference file.
    * @returns `valid`, the `types` found, plus `errors` and `warnings`.
    */
-  async execute({ jsonld }, ctx) {
+  execute({ jsonld }) {
     let doc: unknown;
     try {
       doc = JSON.parse(jsonld);
@@ -185,17 +178,9 @@ export default defineTool({
       };
     }
 
-    let required: Record<string, string[]> | null = null;
-    try {
-      const raw = await ctx
-        .getSkill("schema")
-        .file(REQUIRED_PROPERTIES_FILE)
-        .text();
-      const parsed = REQUIRED_PROPERTIES_SCHEMA.safeParse(JSON.parse(raw));
-      required = parsed.success ? parsed.data : null;
-    } catch {
-      required = null;
-    }
+    const parsedRequired =
+      REQUIRED_PROPERTIES_SCHEMA.safeParse(requiredProperties);
+    const required = parsedRequired.success ? parsedRequired.data : null;
 
     const nodes = nodesOf(doc);
     const errors: string[] = [];

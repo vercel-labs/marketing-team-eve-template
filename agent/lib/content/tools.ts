@@ -1,11 +1,9 @@
 import { defineTool } from "eve/tools";
 import { z } from "zod";
 import {
-  BANNED_WORDS_FILE,
   findBannedWords,
   MAX_DRAFT_LENGTH,
   parseBannedWords,
-  styleSkillId,
 } from "#lib/content/config.js";
 
 /**
@@ -23,17 +21,16 @@ import {
  * Tool that checks a draft against the active surface's banned-words list.
  *
  * @remarks
- * The list is read at runtime through the skill handle, so each style skill stays the source of
- * truth for its own surface. Each agent passes the surfaces it actually authors a `<surface>-style`
- * skill for, so the resolved skill id and file path come from a fixed enum and can never be
- * influenced by the caller. Any failure to resolve, read, parse, or validate the list is treated as
- * "no banned words" rather than failing the check.
+ * Each authored tool passes the JSON data imported from its own style skills. The surface input
+ * selects among that fixed map and cannot influence which source file is bundled.
  *
  * @param surfaces - Content surfaces this agent has a `<surface>-style` skill for.
+ * @param bannedWordsBySurface - Banned-word data imported from those skills' reference files.
  * @returns The configured tool.
  */
 export const lintAgainstStyleTool = (
-  surfaces: readonly [string, ...string[]]
+  surfaces: readonly [string, ...string[]],
+  bannedWordsBySurface: Readonly<Record<string, unknown>>
 ) =>
   defineTool({
     description:
@@ -48,21 +45,11 @@ export const lintAgainstStyleTool = (
      * @param input - Validated tool input.
      * @param input.surface - Content surface whose style skill supplies the banned-words list.
      * @param input.text - Draft text to scan.
-     * @param ctx - Tool runtime context, used to read the skill's reference files.
      * @returns `ok` (true when no banned words are present) and human-readable `violations`.
      */
-    async execute({ surface, text }, ctx) {
-      let banned: string[] = [];
-      try {
-        const raw = await ctx
-          .getSkill(styleSkillId(surface))
-          .file(BANNED_WORDS_FILE)
-          .text();
-        banned = parseBannedWords(raw);
-      } catch {
-        banned = [];
-      }
-
+    execute({ surface, text }) {
+      const raw = JSON.stringify(bannedWordsBySurface[surface] ?? []);
+      const banned = parseBannedWords(raw);
       const hits = findBannedWords(text, banned);
       return {
         ok: hits.length === 0,
