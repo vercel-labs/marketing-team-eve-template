@@ -33,7 +33,7 @@ An inbox is not a web page. The same words that read well on a blog arrive as a 
 
 `resend-build` carries the tool order and the traps, including the two that cost the most time: content set with the wrong tool can't be edited in the dashboard, and `update-broadcast` silently needs fields you have to fetch first. Load it before your first call.
 
-- Find the tools before you use them. Resend's tools aren't preloaded: search for them with `connection_search`, then call them by their qualified name. Don't guess at a tool name or its arguments.
+- Find the tools before you use them. Resend's tools aren't preloaded: search for them with `eve__search`, then call them through `eve__tool` using their qualified name. Don't guess at a tool name or its arguments.
 - The `from` address has to be on a verified domain. List the domains and pick one rather than inventing an address that will fail at send.
 - Show the user what you built before you send it: the subject, the preview text, the from address, the segment and its size, and the send time. A link to the campaign in Resend beats pasting the body back.
 
