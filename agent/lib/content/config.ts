@@ -1,16 +1,19 @@
 import { z } from "zod";
 
 /**
- * Skill layout, input bounds, and pure helpers for the shared content tooling.
+ * Input bounds and pure helpers for the shared content tooling.
  *
  * @remarks
- * Style skills remain the source of truth for each surface's banned words. Their JSON reference
- * files are imported by the authored tool modules and passed here as data because runtime tools
- * cannot read skill files directly.
+ * A style skill is the source of truth for how a surface writes, including the
+ * `references/banned-words.json` list the model reads in the sandbox. The lint tool checks against
+ * those same files: each agent's `tools/lint_against_style.ts` imports its skills' lists directly,
+ * so a list is edited in one place and both the model and the tool see the change on the next
+ * build.
  *
- * The matching logic lives here because it is pure and owns the safety properties:
- * {@link parseBannedWords} decides what a malformed list means and {@link findBannedWords} owns
- * regex construction.
+ * The matching logic lives here, because it is pure and it is where the safety properties sit:
+ * {@link parseBannedWords} decides what a malformed list means and {@link findBannedWords} owns the
+ * regex construction. `tools.ts` is then only the interface, and these helpers stay callable by
+ * whatever content tooling lands next.
  */
 
 /**
@@ -35,25 +38,20 @@ export const MAX_DRAFT_LENGTH = 100_000;
 const BANNED_WORDS_SCHEMA = z.array(z.string());
 
 /**
- * Parse and normalize the raw contents of a `banned-words.json` file.
+ * Validate and normalize the contents of a `banned-words.json` file.
  *
  * @remarks
- * Returns an empty list for anything unusable: invalid JSON, a shape the schema rejects, or
- * entries that are blank once trimmed. Failing open is deliberate. A style skill that ships a
- * broken list should not break drafting, and the tool's own description tells the model that a
- * clean result is a floor rather than a verdict.
+ * Returns an empty list for anything unusable: a shape the schema rejects, or entries that are
+ * blank once trimmed. Failing open is deliberate. A style skill that ships a broken list should not
+ * break drafting, and the tool's own description tells the model that a clean result is a floor
+ * rather than a verdict. Invalid JSON never reaches this function: the file is imported, so a syntax
+ * error fails the build instead.
  *
- * @param raw - File contents as read from the skill.
- * @returns The trimmed, deduplicated entries, or an empty list when the file is unusable.
+ * @param data - The file's parsed contents.
+ * @returns The trimmed, deduplicated entries, or an empty list when the contents are unusable.
  */
-export const parseBannedWords = (raw: string): string[] => {
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(raw);
-  } catch {
-    return [];
-  }
-  const result = BANNED_WORDS_SCHEMA.safeParse(parsed);
+export const parseBannedWords = (data: unknown): string[] => {
+  const result = BANNED_WORDS_SCHEMA.safeParse(data);
   if (!result.success) {
     return [];
   }

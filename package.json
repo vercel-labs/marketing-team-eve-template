@@ -16,17 +16,17 @@
     "validate": "pnpm run check && pnpm run typecheck && eve info"
   },
   "dependencies": {
-    "@vercel/blob": "^2.8.0",
-    "@vercel/connect": "0.8.0",
-    "ai": "^7.0.147",
-    "eve": "^0.81.1",
-    "zod": "4.4.3"
+    "@vercel/blob": "^2.8.2",
+    "@vercel/connect": "2.5.5",
+    "ai": "^7.0.150",
+    "eve": "^0.83.0",
+    "zod": "4.6.7"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.5.9",
-    "@types/node": "~24.13.3",
+    "@biomejs/biome": "^2.5.15",
+    "@types/node": "~24.19.2",
     "typescript": "7.0.2",
-    "ultracite": "^7.10.5"
+    "ultracite": "^8.0.2"
   },
   "engines": {
     "node": "24.x"

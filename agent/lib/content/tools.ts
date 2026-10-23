@@ -13,26 +13,42 @@ import {
  * eve resolves an agent's tools from its own `tools/` directory and subagents inherit nothing, so
  * the three agents that lint a draft call this factory from a one-line file in their own `tools/`.
  *
- * Skill layout, input bounds, and the matching logic live in `config.ts`; this module is the tool
- * interface over them.
+ * Input bounds and the matching logic live in `config.ts`; this module is the tool interface over
+ * them.
  */
 
 /**
  * Tool that checks a draft against the active surface's banned-words list.
  *
  * @remarks
- * Each authored tool passes the JSON data imported from its own style skills. The surface input
- * selects among that fixed map and cannot influence which source file is bundled.
+ * Each agent passes the `references/banned-words.json` list of every `<surface>-style` skill it
+ * authors, imported from the skill directory, so each style skill stays the source of truth for its
+ * own surface. The keys become the tool's `surface` enum, which means the list a call checks
+ * against comes from a fixed map and can never be influenced by the caller. A list that fails
+ * validation is treated as "no banned words" rather than failing the check.
  *
- * @param surfaces - Content surfaces this agent has a `<surface>-style` skill for.
- * @param bannedWordsBySurface - Banned-word data imported from those skills' reference files.
+ * The lists are validated once, when the tool is built, rather than on every call.
+ *
+ * @param bannedWordsBySurface - Each surface's parsed `banned-words.json`, keyed by surface.
  * @returns The configured tool.
+ * @throws When no surface is passed, since the tool would have nothing to check against.
  */
-export const lintAgainstStyleTool = (
-  surfaces: readonly [string, ...string[]],
-  bannedWordsBySurface: Readonly<Record<string, unknown>>
-) =>
-  defineTool({
+export const lintAgainstStyleTool = <const Surface extends string>(
+  bannedWordsBySurface: Readonly<Record<Surface, unknown>>
+) => {
+  const surfaces = Object.keys(bannedWordsBySurface) as Surface[];
+  const [first, ...rest] = surfaces;
+  if (first === undefined) {
+    throw new Error("lintAgainstStyleTool needs at least one surface.");
+  }
+  const bannedBySurface = new Map(
+    surfaces.map((surface) => [
+      surface,
+      parseBannedWords(bannedWordsBySurface[surface]),
+    ])
+  );
+
+  return defineTool({
     description:
       "Check a draft against the target surface's banned-words list and return every violation. " +
       "Run it on each draft before proposing that draft, once per surface when a piece targets " +
@@ -48,9 +64,7 @@ export const lintAgainstStyleTool = (
      * @returns `ok` (true when no banned words are present) and human-readable `violations`.
      */
     execute({ surface, text }) {
-      const raw = JSON.stringify(bannedWordsBySurface[surface] ?? []);
-      const banned = parseBannedWords(raw);
-      const hits = findBannedWords(text, banned);
+      const hits = findBannedWords(text, bannedBySurface.get(surface) ?? []);
       return {
         ok: hits.length === 0,
         violations: hits.map(
@@ -60,7 +74,7 @@ export const lintAgainstStyleTool = (
     },
     inputSchema: z.object({
       surface: z
-        .enum(surfaces)
+        .enum([first, ...rest])
         .describe(
           "The surface this draft is written for. Selects which style skill's banned-words list to check against."
         ),
@@ -83,3 +97,4 @@ export const lintAgainstStyleTool = (
         ),
     }),
   });
+};

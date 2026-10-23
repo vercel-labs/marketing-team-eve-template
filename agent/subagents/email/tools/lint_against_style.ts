@@ -1,6 +1,10 @@
 import { lintAgainstStyleTool } from "#lib/content/tools.js";
-import bannedWords from "../skills/email-style/references/banned-words.json" with {
+import email from "../skills/email-style/references/banned-words.json" with {
   type: "json",
 };
 
-export default lintAgainstStyleTool(["email"], { email: bannedWords });
+/**
+ * Each surface maps to its style skill's own banned-words list, so the skill stays the one place a
+ * list is edited.
+ */
+export default lintAgainstStyleTool({ email });

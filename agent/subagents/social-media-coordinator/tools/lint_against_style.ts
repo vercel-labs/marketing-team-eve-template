@@ -1,27 +1,28 @@
 import { lintAgainstStyleTool } from "#lib/content/tools.js";
-import blueskyBannedWords from "../skills/bluesky-style/references/banned-words.json" with {
+import bluesky from "../skills/bluesky-style/references/banned-words.json" with {
   type: "json",
 };
-import linkedinBannedWords from "../skills/linkedin-style/references/banned-words.json" with {
+import linkedin from "../skills/linkedin-style/references/banned-words.json" with {
   type: "json",
 };
-import mastodonBannedWords from "../skills/mastodon-style/references/banned-words.json" with {
+import mastodon from "../skills/mastodon-style/references/banned-words.json" with {
   type: "json",
 };
-import threadsBannedWords from "../skills/threads-style/references/banned-words.json" with {
+import threads from "../skills/threads-style/references/banned-words.json" with {
   type: "json",
 };
-import xBannedWords from "../skills/x-style/references/banned-words.json" with {
+import x from "../skills/x-style/references/banned-words.json" with {
   type: "json",
 };
 
-export default lintAgainstStyleTool(
-  ["x", "linkedin", "threads", "bluesky", "mastodon"],
-  {
-    bluesky: blueskyBannedWords,
-    linkedin: linkedinBannedWords,
-    mastodon: mastodonBannedWords,
-    threads: threadsBannedWords,
-    x: xBannedWords,
-  }
-);
+/**
+ * Each surface maps to its style skill's own banned-words list, so the skill stays the one place a
+ * list is edited.
+ */
+export default lintAgainstStyleTool({
+  bluesky,
+  linkedin,
+  mastodon,
+  threads,
+  x,
+});

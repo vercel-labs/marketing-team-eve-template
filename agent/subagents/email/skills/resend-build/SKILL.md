@@ -6,7 +6,7 @@ description: Use when building, editing, or sending anything in Resend, includin
 
 The tools are discoverable but the order matters, and several of them fail in ways that are quiet rather than loud. Read this before the first call, not after a call goes wrong.
 
-Resend's tools are not preloaded. Find them with `eve__search`, then call them through `eve__tool` using their qualified name. Don't guess at a tool name or its arguments.
+Resend's tools are not preloaded. Find them with `eve__search` (the query `resend__` lists only Resend's), then call one with `eve__tool` by its qualified name (`resend__<tool>`). Don't guess at a tool name or its arguments.
 
 ## The build order
 

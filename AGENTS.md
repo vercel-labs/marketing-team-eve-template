@@ -51,7 +51,7 @@ Two files per domain is the rule, and the way it breaks is a directory quietly b
 | `lib/vercel-blob/` | Blob path layout, reserved-prefix guards, and the five asset tool factories |
 | `lib/brand-context/` | the brand context Blob key, its size cap, and its two tool factories |
 | `lib/user-preferences/` | the principal-scoped Blob key and its size cap |
-| `lib/content/` | the style-skill layout and the pure banned-words matching, behind `lintAgainstStyleTool(surfaces)` |
+| `lib/content/` | the pure banned-words matching, behind `lintAgainstStyleTool(listsBySurface)` |
 | `lib/artifacts/` | the handoff-artifact key layout, id format, and bounds, behind `saveArtifactTool()` and `readArtifactTool()` |
 | `lib/tracking/` | the campaign-tag vocabulary and URL building, behind `buildTrackedLinkTool(surfaces)` |
 | `lib/writing-quality/` | the surface-independent prose rules as one shared skill. `config.ts` holds the markdown; `skill.ts` assembles it with `writingQualitySkill()`. See [Shared skills](#shared-skills) |
@@ -60,10 +60,13 @@ Two files per domain is the rule, and the way it breaks is a directory quietly b
 
 ```ts
 // agent/subagents/content-marketer/tools/lint_against_style.ts
+import blog from "../skills/blog-style/references/banned-words.json" with { type: "json" };
 import { lintAgainstStyleTool } from "#lib/content/tools.js";
 
-export default lintAgainstStyleTool(["blog"]);
+export default lintAgainstStyleTool({ blog });
 ```
+
+The lint tool imports each surface's `banned-words.json` straight from the style skill, because eve no longer gives tool code a handle on a skill's files (`ctx.getSkill()` is gone). The skill stays the only copy of the list: the model reads it in the sandbox and the tool reads it from the bundle. Adding a surface means adding its import here, next to its `<surface>-style` skill. `validate_schema` reads the `schema` skill's `required-properties.json` the same way.
 
 Imports use the `#*` subpath from `package.json` (`#lib/...` maps to `agent/lib/...`) and **always carry a `.js` extension**, even though the source is `.ts`.
 
@@ -83,7 +86,7 @@ export default writingQualitySkill();
 Four things to know before you touch it:
 
 - **The prose lives in `lib/writing-quality/config.ts`** as template literals, because `description` and `markdown` are typed as `string` and eve refuses `.md` files under `lib/`. Edit that file as a document, not as code, and keep any backtick inside a literal escaped.
-- **`files` entries materialize as real siblings**, so `references/ai-phrases-to-avoid.md` resolves from the skill body. Runtime tools have no skill-file API; when code needs reference data, import it from a module in `lib/` or from the authored tool module.
+- **`files` entries materialize as real siblings**, so `references/ai-phrases-to-avoid.md` still resolves from the markdown body. The compiled package is byte-identical to the directory it replaced, minus the frontmatter block: the description now travels in the manifest instead of the file.
 - **The skill name comes from the calling file's slug**, so every caller has to sit at `skills/writing-quality.ts`. Rename the file and the skill renames with it, silently breaking the `instructions.md` files that ask for it by name.
 - **Skill names must start with an alphanumeric character.** One that doesn't is dropped from discovery with no diagnostic and no entry in the manifest, which is a genuinely confusing five minutes.
 
