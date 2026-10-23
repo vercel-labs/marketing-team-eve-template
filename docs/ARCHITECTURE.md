@@ -27,7 +27,7 @@ There is no central registry or wiring file: a tool's name is its filename, a su
 agent/
   agent.ts                          # lead: model and compaction threshold
   instructions.md                   # lead behavior: ground, route once with a full brief, hand back
-  sandbox.ts                        # Vercel Sandbox backend for the lead
+  sandbox.ts                        # Vercel Sandbox environment for the lead
   channels/
     eve.ts                          # inbound route for the TUI and your own front end
     slack.ts                        # inbound route for Slack, credentials via Vercel Connect
@@ -38,11 +38,12 @@ agent/
     save_user_preferences.ts        # write them
     clear_user_preferences.ts       # delete them (approval: always)
     read_artifact.ts                # read a handoff artifact by id, on request
+    ask_question.ts                 # ask the user one question; eve no longer adds it by default
   lib/                              # shared typed helpers; imported as #lib/<domain>/<file>.js
     vercel-blob/{config,tools}.ts   # Blob key layout, reserved-prefix guards, 5 asset tool factories
     brand-context/{config,tools}.ts # brand context key + size cap, get/save tool factories
     user-preferences/config.ts      # principal-scoped key + size cap (no tools; consumed by root tools)
-    content/{config,tools}.ts       # style-skill layout + match helpers, lintAgainstStyleTool(surfaces)
+    content/{config,tools}.ts       # banned-words match helpers, lintAgainstStyleTool(listsBySurface)
     artifacts/{config,tools}.ts     # artifact key layout + id format, save/readArtifactTool()
     tracking/{config,tools}.ts      # campaign-tag vocabulary, buildTrackedLinkTool(surfaces)
     writing-quality/{config,skill}.ts # the shared prose-rules skill, used by every prose agent
@@ -56,7 +57,7 @@ agent/
       skills/customer-research/     # interview questions, mining customers' own words
       skills/brand-context/         # the shared document's structure and merge rules
       tools/                        # 5 asset tools, get/save_brand_context, save/read_artifact,
-                                    #   bash disabled
+                                    #   ask_question, bash disabled
     social-media-coordinator/
       agent.ts  instructions.md     # short-form drafting, platform fit, queue management
       sandbox.ts                    # its own sandbox; subagents inherit nothing
@@ -69,7 +70,7 @@ agent/
       skills/mastodon-style/
       skills/writing-quality.ts     # surface-independent prose rules (shared from lib)
       tools/                        # 5 asset tools, get/save_brand_context, lint_against_style,
-                                    #   save/read_artifact, bash disabled
+                                    #   save/read_artifact, ask_question, bash disabled
     content-marketer/
       agent.ts  instructions.md     # planning then drafting long-form
       sandbox.ts                    # its own sandbox; subagents inherit nothing
@@ -79,7 +80,7 @@ agent/
       skills/content-editing/       # editing in separate passes
       skills/writing-quality.ts     # surface-independent prose rules (shared from lib)
       tools/                        # 5 asset tools, get_brand_context, lint_against_style,
-                                    #   save/read_artifact, bash disabled
+                                    #   save/read_artifact, ask_question, bash disabled
     seo/
       agent.ts  instructions.md     # audit what it can see, plan what should exist
       sandbox.ts                    # its own sandbox; subagents inherit nothing
@@ -89,7 +90,7 @@ agent/
       skills/schema/                # JSON-LD per type, plus validation
       skills/programmatic-seo/      # 12 patterns, data defensibility, thin-content failure
       tools/                        # 5 asset tools, get_brand_context, save/read_artifact,
-                                    #   bash disabled
+                                    #   ask_question, bash disabled
     email/
       agent.ts  instructions.md     # adapt copy for the inbox, then build and send in Resend
       sandbox.ts                    # its own sandbox; subagents inherit nothing
@@ -102,7 +103,7 @@ agent/
       skills/resend-build/          # tool order, the compose/html mode trap, the send gate
       skills/writing-quality.ts     # surface-independent prose rules (shared from lib)
       tools/                        # 5 asset tools, get_brand_context, lint_against_style,
-                                    #   save/read_artifact, bash disabled
+                                    #   save/read_artifact, ask_question, bash disabled
 ```
 
 ## Core components
@@ -140,17 +141,17 @@ you
          └─ one specialist, briefed in full
              ├─ get_brand_context                           (Blob read, again: fresh context)
              ├─ save_brand_context                          (product-marketer: its deliverable)
-             ├─ load_skill <surface>-style, writing-quality  (sandbox materializes references/)
-             ├─ load_skill positioning, messaging, ...        (product-marketer only)
-             ├─ load_skill seo-audit, schema, ...            (seo only)
+             ├─ eve__skill <surface>-style, writing-quality  (sandbox materializes references/)
+             ├─ eve__skill positioning, messaging, ...        (product-marketer only)
+             ├─ eve__skill seo-audit, schema, ...            (seo only)
              ├─ web_fetch a page under review                (seo only: server HTML, no JS)
              ├─ web_search / web_fetch                       (own research, source-budgeted)
              ├─ lint_against_style                           (banned-words check)
              ├─ save_artifact -> id                          (long output, private Blob)
              ├─ read_artifact <id>                           (an artifact the brief named)
-             ├─ load_skill content-editing, writing-quality   (own review pass before handback)
-             ├─ load_skill email-adaptation, resend-build     (email only)
-             ├─ notion MCP tools                             (content-marketer: writes the page)
+             ├─ eve__skill content-editing, writing-quality   (own review pass before handback)
+             ├─ eve__skill email-adaptation, resend-build     (email only)
+             ├─ notion MCP tools, via eve__search / eve__tool (content-marketer: writes the page)
              ├─ typefully MCP tools                          (approval on scheduling and deletes)
              ├─ resend MCP tools                             (email only: allow-listed surface,
              │                                                 approval on every send and delete)
@@ -178,12 +179,12 @@ There is no application database.
 | Notion | briefs, calendars, and the finished long-form pieces | remote MCP at `mcp.notion.com`, user-scoped OAuth through Vercel Connect |
 | Typefully | social drafts, scheduling, post and follower analytics | remote MCP at `mcp.typefully.com`, static workspace API key |
 | Resend | email campaigns, templates, contacts and segments, delivery records | remote MCP at `mcp.resend.com`, user-scoped OAuth through Vercel Connect, discovery narrowed by `tools.allow` |
-| Vercel Sandbox | materializes each skill's `references/` files and runs `bash` | `defineSandbox({ backend: vercel() })` |
+| Vercel Sandbox | materializes each skill's `references/` files and runs `bash` | `VercelSandbox.environment()`, opened by `defineSandbox(() => environment.open())` |
 | Open web | research and fact-checking | the framework's default `web_search` and `web_fetch`, in each specialist; `bash` is disabled so fetching goes through `web_fetch` |
 
 ## Deployment & infrastructure
 
-- **Platform:** Vercel. `eve deploy` for production; `eve build` produces the bundle.
+- **Platform:** Vercel. `eve deploy` for production; `eve build` produces the bundle and captures each agent's Vercel Sandbox snapshot, so it needs a linked project. To check that the bundle builds without one, run `npx eve build --skip-sandbox-prewarm`; that output isn't deployable.
 - **Stores:** one public Vercel Blob store. Auth is the project's OIDC token, so no Blob credential is stored.
 - **Connectors:** three Vercel Connect connectors, Notion (`NOTION_CONNECTOR`, defaulting to `notion/marketing-team`), Resend (`RESEND_CONNECTOR`, defaulting to `resend/marketing-team`), and Slack (`SLACK_CONNECTOR`, defaulting to `slack/marketing-team`). The Slack one needs `--triggers` and its trigger path set to `/eve/v1/slack`, which the Deploy button does; a connector created by hand with `vercel connect create` has to be re-pointed there. Blob is provisioned as a store, not a connector.
 - **Environment:** `TYPEFULLY_API_KEY` is the only static credential. Notion and Resend are authorized per user in the browser and Slack is brokered by the same Connect layer, so none of them holds a secret here, and Blob and the model use the project's OIDC token. `vercel env pull` gives local runs the same environment as production. Resend also needs a verified sending domain in the workspace before anything can be sent; the agent reads that state but cannot create it.
@@ -195,7 +196,7 @@ There is no application database.
 - **Runtime/TUI:** `pnpm dev` (`eve dev`). Talk to the lead to exercise routing, and watch which specialist it picks.
 - **Type checking:** `pnpm typecheck` (`tsc --noEmit`).
 - **Lint/format:** `pnpm check` and `pnpm fix` (Ultracite / Biome, ~100 files).
-- **Discovery diagnostics:** `npx eve info` prints the manifest, currently 5 subagents, 6 root tools, and 1 root connection. Its `Skills` and `Connections` counts cover the root only, so `Skills` reads `0`: all 23 skills belong to subagents, as do the Typefully and Resend connections. Detail lands in `.eve/discovery/diagnostics.json`.
+- **Discovery diagnostics:** `npx eve info` prints the manifest, currently 5 subagents, 13 root tools (the 7 under `agent/tools/` plus eve's defaults: `bash`, `read_file`, `write_file`, `web_fetch`, `web_search`, and `agent`), and 1 root connection. Its `Skills` and `Connections` counts cover the root only, so `Skills` reads `0`: all 23 skills belong to subagents, as do the Typefully and Resend connections. Detail lands in `.eve/discovery/diagnostics.json`.
 - **Everything at once:** `pnpm validate`.
 
 There is no unit-test suite. Validation is static (lint, types, discovery) plus manual exercise in the TUI.
@@ -204,7 +205,7 @@ There is no unit-test suite. Validation is static (lint, types, discovery) plus 
 
 - **eve** — Vercel's agent framework. Discovers an agent's capabilities from the filesystem and produces a deployable app.
 - **Channel** — an inbound entry point plus its auth chain. This project has one, `eve`.
-- **Connection** — an MCP server the agent can call. Its tools appear to the model as `connection__<name>__<tool>`, for example `connection__notion__notion-create-pages`.
+- **Connection** — an MCP server the agent can call. The model finds its tools with `eve__search` and calls them with `eve__tool` by their qualified name, `<connection>__<tool>`, for example `notion__notion-create-pages`. Approval policies see the same qualified name.
 - **Tool** — a typed function in the app runtime, one default export per file, named after its filename.
 - **Skill** — a `SKILL.md` plus optional `references/`, loaded on demand when its frontmatter `description` matches the situation. Scoped to the agent that declares it; there is no shared-skill mechanism, so shared procedures are copied.
 - **Subagent** — a child agent exposed to its parent as a tool. It runs in a fresh session and inherits nothing, so the parent passes everything in `message`.

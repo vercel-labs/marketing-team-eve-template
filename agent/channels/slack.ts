@@ -33,6 +33,14 @@ const slackCredentials = connectSlackCredentials(
  * the requester's thread, so the channel and thread coordinates are always
  * stamped; the author is taken from the parsed message when present, with
  * a fallback to the raw event's `user` field.
+ *
+ * The principal uses the same shape eve gives a person who clicks a button,
+ * `slack:<team>:<user>` with the issuer `slack:<team>`, where `<team>` is the
+ * workspace the app is installed in. That match is load-bearing: eve lets
+ * only the requester answer an approval that has no `approval.response`
+ * policy, and it identifies the person behind an Approve click by that shape.
+ * A requester principal in any other form would leave the user unable to
+ * approve their own Notion, Typefully, or Resend calls.
  */
 function slackSessionAuth(message: SlackMessage, onBehalfOfUserId?: string) {
   const rawUser = message.raw.user;
@@ -40,6 +48,8 @@ function slackSessionAuth(message: SlackMessage, onBehalfOfUserId?: string) {
     message.author?.userId ??
     (typeof rawUser === "string" ? rawUser : undefined) ??
     onBehalfOfUserId;
+  const isService = Boolean(message.author?.isBot && !onBehalfOfUserId);
+  const team = message.installationTeamId || message.teamId;
   return {
     attributes: {
       channel_id: message.channelId,
@@ -52,11 +62,31 @@ function slackSessionAuth(message: SlackMessage, onBehalfOfUserId?: string) {
       ...(message.teamId ? { team_id: message.teamId } : {}),
     },
     authenticator: "slack-webhook",
-    issuer: message.teamId ? `slack:${message.teamId}` : "slack",
-    principalId: userId ? `slack:${userId}` : "slack:unknown",
-    principalType:
-      message.author?.isBot && !onBehalfOfUserId ? "service" : "user",
+    issuer: team ? `slack:${team}` : "slack",
+    principalId: slackPrincipalId({ isService, team, userId }),
+    principalType: isService ? "service" : "user",
   };
+}
+
+/**
+ * The principal id eve's Slack channel gives the same person, so a message and
+ * a button click from them resolve to one identity.
+ *
+ * @param input - The workspace, the Slack user id, and whether it is a bot.
+ * @returns `slack:<team>:<user>`, `slack:<team>:bot:<user>` for a bot, or
+ * `slack:unknown` when the message carries no user at all.
+ */
+function slackPrincipalId(input: {
+  isService: boolean;
+  team: string | undefined;
+  userId: string | undefined;
+}): string {
+  const { isService, team, userId } = input;
+  if (!userId) {
+    return "slack:unknown";
+  }
+  const user = isService ? `bot:${userId}` : userId;
+  return team ? `slack:${team}:${user}` : `slack:${user}`;
 }
 
 /**
@@ -125,12 +155,14 @@ async function resolveOnBehalfOfUserId(
   return firstHumanMention(message.text, botUserId);
 }
 
+/**
+ * Dispatches a message with the auth {@link slackSessionAuth} derives.
+ *
+ * @remarks
+ * There is no typing indicator to set here: eve shows `Thinking...` itself, before a mention or
+ * DM handler runs and after `onMessage` accepts a message, and clears it when a handler drops one.
+ */
 async function handleInbound(ctx: SlackContext, message: SlackMessage) {
-  try {
-    await ctx.thread.startTyping("Thinking...");
-  } catch {
-    // Typing indicator is a nicety, never a reason to drop the message.
-  }
   return {
     auth: slackSessionAuth(
       message,

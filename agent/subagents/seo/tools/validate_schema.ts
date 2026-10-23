@@ -1,14 +1,8 @@
 import { defineTool } from "eve/tools";
 import { z } from "zod";
-
-/**
- * Path, within the `schema` skill, of the required-property map this tool checks against.
- *
- * @remarks
- * The skill stays the source of truth: its `SKILL.md` table and this file list the same types, so
- * adding one is a skill edit rather than a code change.
- */
-const REQUIRED_PROPERTIES_FILE = "references/required-properties.json";
+import requiredPropertiesFile from "../skills/schema/references/required-properties.json" with {
+  type: "json",
+};
 
 /**
  * Maximum length of the JSON-LD accepted, in characters.
@@ -19,6 +13,19 @@ const MAX_JSON_LENGTH = 100_000;
  * Schema for `required-properties.json`: a map of `@type` to the properties Google needs.
  */
 const REQUIRED_PROPERTIES_SCHEMA = z.record(z.string(), z.array(z.string()));
+
+/**
+ * The `schema` skill's required-property map, or `null` when the file doesn't match its schema.
+ *
+ * @remarks
+ * Imported from the skill's own `references/required-properties.json`, so the skill stays the
+ * source of truth: its `SKILL.md` table and that file list the same types, and adding one is a
+ * skill edit rather than a code change. Validated once, when the module loads.
+ */
+const REQUIRED_PROPERTIES: Record<string, string[]> | null = (() => {
+  const parsed = REQUIRED_PROPERTIES_SCHEMA.safeParse(requiredPropertiesFile);
+  return parsed.success ? parsed.data : null;
+})();
 
 /**
  * Properties whose value must be an ISO 8601 date or date-time.
@@ -99,7 +106,7 @@ const typesOf = (node: JsonLdNode): string[] => {
  * Check one node's required properties against the map.
  *
  * @param node - One JSON-LD entity.
- * @param required - The map read from the skill.
+ * @param required - The map imported from the skill.
  * @returns One message per missing required property.
  */
 const missingRequired = (
@@ -152,8 +159,8 @@ const malformedValues = (node: JsonLdNode): string[] => {
  * whether the markup describes what the page actually shows, which is the failure that earns a
  * manual action, so a clean result is a floor rather than approval.
  *
- * The required-property map is read from the skill at runtime, so the `SKILL.md` table and the
- * validator can't drift. When that file can't be read the result is an error rather than a warning,
+ * The required-property map is imported from the skill, so the `SKILL.md` table and the validator
+ * can't drift. When that file doesn't validate the result is an error rather than a warning,
  * and `valid` goes false: a validator that skips its main check and still reports clean is worse
  * than one that fails, because the caller acts on `valid` and not on the prose beside it.
  */
@@ -167,10 +174,9 @@ export default defineTool({
    * Validate the supplied JSON-LD.
    *
    * @param input - Validated tool input.
-   * @param ctx - Tool runtime context, used to read the skill's reference file.
    * @returns `valid`, the `types` found, plus `errors` and `warnings`.
    */
-  async execute({ jsonld }, ctx) {
+  execute({ jsonld }) {
     let doc: unknown;
     try {
       doc = JSON.parse(jsonld);
@@ -185,17 +191,7 @@ export default defineTool({
       };
     }
 
-    let required: Record<string, string[]> | null = null;
-    try {
-      const raw = await ctx
-        .getSkill("schema")
-        .file(REQUIRED_PROPERTIES_FILE)
-        .text();
-      const parsed = REQUIRED_PROPERTIES_SCHEMA.safeParse(JSON.parse(raw));
-      required = parsed.success ? parsed.data : null;
-    } catch {
-      required = null;
-    }
+    const required = REQUIRED_PROPERTIES;
 
     const nodes = nodesOf(doc);
     const errors: string[] = [];
@@ -213,7 +209,7 @@ export default defineTool({
     }
     if (!required) {
       errors.push(
-        "Could not read the required-property map from the schema skill, so the per-type checks did not run. This block is unchecked rather than clean."
+        "The schema skill's required-property map is malformed, so the per-type checks did not run. This block is unchecked rather than clean."
       );
     }
 
