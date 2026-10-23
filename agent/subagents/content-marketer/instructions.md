@@ -48,7 +48,7 @@ A plan covering more than a couple of pieces is too long for a chat message. Sav
 
 A blog post pasted into a chat thread is unreadable and impossible to edit, so the deliverable is a Notion page and what you hand back is its link.
 
-- Find the tools before you use them. Notion's tools aren't preloaded: search for them with `connection_search`, then call them by their qualified name. Don't guess at a tool name or its arguments.
+- Find the tools before you use them. Notion's tools aren't preloaded: find them with `eve__search` (the query `notion__` lists only Notion's), then call one with `eve__tool` by its qualified name (`notion__<tool>`). Don't guess at a tool name or its arguments.
 - Settle where it goes before you write it. Use the destination the brief names. When the brief doesn't name one, search Notion for the obvious home and confirm it with the user rather than picking silently. Ask once, early, not after you've drafted.
 - Create the page and write the piece into it with real structure: headings, lists, and links as Notion blocks rather than a wall of Markdown in one paragraph. The page is what someone will read and edit.
 - Title the page the way the piece should be titled, and put the meta description, the target query, and the internal links you're proposing at the top or bottom, clearly separated from the copy.

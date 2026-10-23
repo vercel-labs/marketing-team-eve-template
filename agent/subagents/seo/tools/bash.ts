@@ -10,7 +10,7 @@ import { disableTool } from "eve/tools";
  * trips. Removing the shell leaves `web_fetch`, which returns converted markdown in a single call
  * that the source budget in `instructions.md` can actually count.
  *
- * The file tools (`read_file`, `write_file`, `glob`, `grep`) stay: they reach the sandbox
+ * The file tools (`read_file`, `write_file`) stay: they reach the sandbox
  * filesystem, which is how this agent reads its own skills' `references/` files, and with no shell
  * there is no way to put a fetched page there.
  *
