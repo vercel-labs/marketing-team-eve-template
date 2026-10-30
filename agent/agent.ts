@@ -11,6 +11,6 @@ import { defineAgent } from "eve";
  * is compacted once it reaches 90% of the context window.
  */
 export default defineAgent({
-  compaction: { thresholdPercent: 0.9 },
+  compaction: { threshold: 0.9 },
   model: "anthropic/claude-opus-5",
 });

@@ -29,10 +29,10 @@ import {
  */
 export const writingQualitySkill = () =>
   defineSkill({
+    content: WRITING_QUALITY_MARKDOWN,
     description: WRITING_QUALITY_DESCRIPTION,
     files: {
       "references/ai-phrases-to-avoid.md": AI_PHRASES_TO_AVOID,
       "references/plain-english-alternatives.md": PLAIN_ENGLISH_ALTERNATIVES,
     },
-    markdown: WRITING_QUALITY_MARKDOWN,
   });

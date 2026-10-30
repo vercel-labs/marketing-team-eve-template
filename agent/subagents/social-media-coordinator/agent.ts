@@ -11,7 +11,7 @@ import { defineAgent } from "eve";
  * once it reaches 90% of the context window.
  */
 export default defineAgent({
-  compaction: { thresholdPercent: 0.9 },
+  compaction: { threshold: 0.9 },
   description:
     "Run social media work end to end for X, LinkedIn, Threads, Bluesky, and Mastodon: draft " +
     "posts and threads in each platform's voice, adapt one piece across platforms, and manage " +

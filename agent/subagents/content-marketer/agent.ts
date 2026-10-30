@@ -11,7 +11,7 @@ import { defineAgent } from "eve";
  * of the context window.
  */
 export default defineAgent({
-  compaction: { thresholdPercent: 0.9 },
+  compaction: { threshold: 0.9 },
   description:
     "Write and edit long-form marketing content: blog posts, landing page copy, case studies, " +
     "newsletters, and documentation. Plans what to write by mapping topics to buyer stages and " +

@@ -11,7 +11,7 @@ import { defineAgent } from "eve";
  * once it reaches 90% of the context window.
  */
 export default defineAgent({
-  compaction: { thresholdPercent: 0.9 },
+  compaction: { threshold: 0.9 },
   description:
     "Own email as a channel: take copy that already exists and make it work as email, then build " +
     "and run it in Resend. Reviews a draft for email fit (subject and preview text, one call to " +

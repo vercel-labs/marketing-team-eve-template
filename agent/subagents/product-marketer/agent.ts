@@ -20,7 +20,7 @@ import { defineAgent } from "eve";
  * than thoroughness, so the brevity discipline lives in `instructions.md`.
  */
 export default defineAgent({
-  compaction: { thresholdPercent: 0.9 },
+  compaction: { threshold: 0.9 },
   description:
     "Work out and write down what the product is, who it's for, and why anyone would pick it: " +
     "positioning, the competitive alternatives, the ideal customer, the message hierarchy, value " +

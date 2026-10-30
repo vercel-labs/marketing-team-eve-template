@@ -17,7 +17,7 @@ import { defineAgent } from "eve";
  * repeats the boundary where the model acts on it.
  */
 export default defineAgent({
-  compaction: { thresholdPercent: 0.9 },
+  compaction: { threshold: 0.9 },
   description:
     "Plan and review organic search work: keyword and topic strategy, on-page review of a URL, " +
     "site architecture and internal linking, URL structure, JSON-LD schema markup, and " +
